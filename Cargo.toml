@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "src-tauri/libmim",
-    "src-tauri/src",
+    "src-tauri",
     "src-tauri/buffers",
     "src-tauri/clone_to_owned",
     "src-tauri/bencode",
