@@ -2,8 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-use std::{net::SocketAddr, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
-
+use std::{net::SocketAddr, net::Ipv4Addr, path::PathBuf, str::FromStr, sync::Arc, time::Duration};
 use anyhow::Context;
 use libmim::{
     http_api::{ApiAddTorrentResponse, HttpApi},
@@ -18,7 +17,7 @@ use libmim::{
 use log::{error, info, warn};
 use size_format::SizeFormatterBinary as SF;
 
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy)]
 enum LogLevel {
     Trace,
     Debug,
@@ -120,11 +119,36 @@ enum SubCommand {
 
 #[tauri::command]
 fn download_fun(sent_url: &str) -> anyhow::Result<()> {
-    let opts = Opts{http_api_listen_addr:"127.0.0.1:3030", worker_threads:Some(8),
-    single_thread_runtime: true,disable_dht: false,disable_dht_persistence: false,
-    subcommand:SubCommand::Server(ServerOpts{subcommand:ServerSubcommand::Start(ServerStartOptions{output_folder:String::from("./target")})}), 
-    subcommand:SubCommand::Download(DownloadOpts{torrent_path:sent_url})};
     
+    let opts = Opts {
+        log_level: Some(LogLevel::Debug),
+        force_tracker_interval: Some("30s".parse::<ParsedDuration>().unwrap()),
+        http_api_listen_addr: SocketAddr::new(Ipv4Addr::new(127, 0, 0, 1).into(), 8080),
+        single_thread_runtime: false,
+        disable_dht: true,
+        disable_dht_persistence: true,
+        peer_connect_timeout: Some("30s".parse::<ParsedDuration>().unwrap()),
+        peer_read_write_timeout: Some("30s".parse::<ParsedDuration>().unwrap()),
+        worker_threads: Some(4),
+        subcommand: SubCommand::Server(ServerOpts {
+            subcommand: ServerSubcommand::Start(ServerStartOptions {
+                output_folder: String::from("downloads"),
+            }),
+        }),
+    };
+    
+    // Initialize DownloadOpts
+    let download_opts = DownloadOpts {
+        torrent_path: vec![
+            String::from(sent_url),
+        ],
+        output_folder: Some(String::from("downloads")),
+        sub_folder: Some(String::from("subfolder")),
+        only_files_matching_regex: Some(String::from(".*\\.iso")),
+        list: true,
+        overwrite: false,
+    };
+
     init_logging(&opts);
 
     let (mut rt_builder, spawner) = match opts.single_thread_runtime {
