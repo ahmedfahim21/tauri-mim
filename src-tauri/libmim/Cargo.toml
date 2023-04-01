@@ -1,0 +1,56 @@
+[package]
+name = "libmim"
+version = "0.1.0"
+authors = ["Inbasekaran <inba2002.p@gmail.com>"]
+edition = "2018"
+
+[features]
+default = ["sha1-system", "default-tls"]
+sha1-system = ["sha1w/sha1-system"]
+sha1-openssl = ["sha1w/sha1-openssl"]
+sha1-rust = ["sha1w/sha1-rust"]
+default-tls = ["reqwest/default-tls"]
+rust-tls = ["reqwest/rustls-tls"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bencode = {path = "../bencode", default-features=false}
+buffers = {path = "../buffers"}
+libmim_core = {path = "../libmim_core"}
+clone_to_owned = {path = "../clone_to_owned"}
+peer_binary_protocol = {path = "../peer_binary_protocol"}
+sha1w = {path = "../sha1w", default-features=false}
+dht = {path = "../dht"}
+
+tokio = {version = "1", features = ["macros", "rt-multi-thread"]}
+axum = {version = "0.6"}
+tokio-stream = "0.1"
+serde = {version = "1", features=["derive"]}
+serde_json = "1"
+serde_urlencoded = "*"
+anyhow = "1"
+
+regex = "1"
+reqwest = {version="0.11", default-features=false}
+urlencoding = "2"
+byteorder = "1"
+bincode = "1"
+bitvec = "1"
+parking_lot = "0.12"
+log = "0.4"
+size_format = "1"
+rand = "0.8"
+
+openssl = {version="0.10", optional=true}
+crypto-hash = {version="0.3", optional=true}
+sha1 = {version = "0.10", optional=true}
+
+uuid = {version = "1.2", features = ["v4"]}
+futures = "0.3"
+url = "2"
+hex = "0.4"
+
+[dev-dependencies]
+futures = {version = "0.3"}
+pretty_env_logger = "0.4"

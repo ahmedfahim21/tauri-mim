@@ -1,0 +1,18 @@
+[workspace]
+members = [
+    "src-tauri/libmim",
+    "src-tauri/src",
+    "src-tauri/buffers",
+    "src-tauri/clone_to_owned",
+    "src-tauri/bencode",
+    "src-tauri/sha1w",
+    "src-tauri/libmim_core",
+    "src-tauri/peer_binary_protocol",
+    "src-tauri/dht"
+]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
