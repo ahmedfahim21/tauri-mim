@@ -18,17 +18,63 @@ use libmim::{
 use log::{error, info, warn};
 use size_format::SizeFormatterBinary as SF;
 
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum LogLevel {
+    Trace,
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
 
+#[derive(Debug, Clone, Copy)]
+struct ParsedDuration(Duration);
+impl FromStr for ParsedDuration {
+    type Err = parse_duration::parse::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        parse_duration::parse(s).map(ParsedDuration)
+    }
+}
+
+fn init_logging(opts: &Opts) {
+    if std::env::var_os("RUST_LOG").is_none() {
+        match opts.log_level.as_ref() {
+            Some(level) => {
+                let level_str = match level {
+                    LogLevel::Trace => "trace",
+                    LogLevel::Debug => "debug",
+                    LogLevel::Info => "info",
+                    LogLevel::Warn => "warn",
+                    LogLevel::Error => "error",
+                };
+                std::env::set_var("RUST_LOG", level_str);
+            }
+            None => {
+                std::env::set_var("RUST_LOG", "info");
+            }
+        };
+    }
+    pretty_env_logger::init();
+}
 
 struct Opts {
 
+    log_level: Option<LogLevel>,
+
+    force_tracker_interval: Option<ParsedDuration>,
+
     http_api_listen_addr: SocketAddr,
 
-    // single_thread_runtime: bool,
+    single_thread_runtime: bool,
 
-    // disable_dht: bool,
+    disable_dht: bool,
 
-    // disable_dht_persistence: bool,
+    disable_dht_persistence: bool,
+   
+    peer_connect_timeout: Option<ParsedDuration>,
+
+    peer_read_write_timeout: Option<ParsedDuration>,
 
     worker_threads: Option<usize>,
 
@@ -53,15 +99,15 @@ struct DownloadOpts {
     
     torrent_path: Vec<String>,
 
-    // output_folder: Option<String>,
+    output_folder: Option<String>,
 
-    // sub_folder: Option<String>,
+    sub_folder: Option<String>,
 
-    // only_files_matching_regex: Option<String>,
+    only_files_matching_regex: Option<String>,
 
-    // list: bool,
+    list: bool,
 
-    // overwrite: bool,
+    overwrite: bool,
 }
 
 // server start
@@ -74,10 +120,12 @@ enum SubCommand {
 
 #[tauri::command]
 fn download_fun(sent_url: &str) -> anyhow::Result<()> {
-    let opts = Opts{http_api_listen_addr:"127.0.0.1:3030", worker_threads:8, 
-    subcommand:SubCommand::Server(ServerOpts{subcommand:ServerSubcommand::Start(ServerStartOptions{output_folder:"./target".to_string})}), 
+    let opts = Opts{http_api_listen_addr:"127.0.0.1:3030", worker_threads:Some(8),
+    single_thread_runtime: true,disable_dht: false,disable_dht_persistence: false,
+    subcommand:SubCommand::Server(ServerOpts{subcommand:ServerSubcommand::Start(ServerStartOptions{output_folder:String::from("./target")})}), 
     subcommand:SubCommand::Download(DownloadOpts{torrent_path:sent_url})};
     
+    init_logging(&opts);
 
     let (mut rt_builder, spawner) = match opts.single_thread_runtime {
         true => (
