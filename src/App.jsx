@@ -7,7 +7,20 @@ function App() {
 
   async function download() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setMsg(await invoke("download_fun", { name }));
+    // setMsg(await invoke("download_fun", { name }));
+    try {
+      const response = await window.__TAURI__.invoke('my_command',{name})
+      if (response.success) {
+        console.log('Command succeeded:', response.message)
+      } else {
+        console.error('Command failed:', response.message)
+        if (response.error) {
+          console.error('Error message:', response.error)
+        }
+      }
+    } catch (e) {
+      console.error('Error:', e)
+    }
   }
 
   return (
@@ -27,7 +40,7 @@ function App() {
                 <button className="bg-[#00df9a] text-black rounded-md font-medium w-[200px] ml-4 my-6 px-6 py-3" type="submit">DOWNLOAD</button>
                 </form>
         </div>
-      <p>{Msg}</p>
+      {/* <p>{Msg}</p> */}
     </div>
     </div>
   );

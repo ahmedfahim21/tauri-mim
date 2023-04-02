@@ -16,6 +16,8 @@ use libmim::{
 };
 use log::{error, info, warn};
 use size_format::SizeFormatterBinary as SF;
+use serde::{Serialize};
+
 
 #[derive(Debug, Clone, Copy)]
 enum LogLevel {
@@ -117,7 +119,24 @@ enum SubCommand {
     Download(DownloadOpts),
 }
 
+#[derive(Serialize)]
+struct Response {
+    success: bool,
+    message: String,
+}
+
 #[tauri::command]
+fn my_command(sent_url: &str) -> String {
+    // Your Rust code here
+    let my_result = download_fun(sent_url);
+    let response = Response {
+        success: true,
+        message: "Success!".to_string(),
+    };
+    // let json_response = serde_json::to_value(response)?;
+    response.message
+}
+
 fn download_fun(sent_url: &str) -> anyhow::Result<()> {
     
     let opts = Opts {
@@ -147,6 +166,19 @@ fn download_fun(sent_url: &str) -> anyhow::Result<()> {
         only_files_matching_regex: Some(String::from(".*\\.iso")),
         list: true,
         overwrite: false,
+    };
+
+    let opts = Opts {
+        log_level: Some(LogLevel::Debug),
+        force_tracker_interval: Some("30s".parse::<ParsedDuration>().unwrap()),
+        http_api_listen_addr: SocketAddr::new(Ipv4Addr::new(127, 0, 0, 1).into(), 8080),
+        single_thread_runtime: false,
+        disable_dht: true,
+        disable_dht_persistence: true,
+        peer_connect_timeout: Some("30s".parse::<ParsedDuration>().unwrap()),
+        peer_read_write_timeout: Some("30s".parse::<ParsedDuration>().unwrap()),
+        worker_threads: Some(4),
+        subcommand: SubCommand::Download(download_opts),
     };
 
     init_logging(&opts);
@@ -386,7 +418,7 @@ async fn async_main(opts: Opts, spawner: BlockingSpawner) -> anyhow::Result<()> 
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![download_fun])
+        .invoke_handler(tauri::generate_handler![my_command])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
